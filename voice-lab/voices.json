@@ -1,0 +1,22 @@
+{
+  "voices": [
+    {
+      "voice_id": "orak_female_01",
+      "display_name": "ORAK Female 01",
+      "speaker_type": "female",
+      "language": "ar",
+      "style_tags": ["versatile", "warm", "natural"],
+      "model_file": "orak_female_01.onnx",
+      "enabled": false
+    },
+    {
+      "voice_id": "orak_male_01",
+      "display_name": "ORAK Male 01",
+      "speaker_type": "male",
+      "language": "ar",
+      "style_tags": ["versatile", "warm", "natural"],
+      "model_file": "orak_male_01.onnx",
+      "enabled": false
+    }
+  ]
+}
