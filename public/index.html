@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101827">
+  <title>ORAK AI</title>
+  <style>
+    :root{color-scheme:dark;--bg:#0b1220;--panel:#111c2e;--line:#26364d;--text:#edf3fb;--muted:#9aabc0;--accent:#57c5a5}
+    *{box-sizing:border-box}body{margin:0;background:linear-gradient(145deg,#0b1220,#101d30);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;min-height:100vh}
+    .app{max-width:900px;margin:auto;min-height:100vh;display:flex;flex-direction:column;padding:18px}
+    header{display:flex;align-items:center;gap:12px;padding:12px 4px 18px;border-bottom:1px solid var(--line)}
+    .logo{width:44px;height:44px;border-radius:14px;background:var(--accent);color:#06251d;display:grid;place-items:center;font-weight:900;font-size:20px}
+    h1{font-size:20px;margin:0}header p{margin:3px 0 0;color:var(--muted);font-size:13px}
+    #status{margin-right:auto;color:var(--muted);font-size:12px}
+    #chat{flex:1;display:flex;flex-direction:column;gap:14px;padding:24px 0;min-height:50vh}
+    .welcome{margin:auto;text-align:center;color:var(--muted);line-height:1.8}.welcome strong{display:block;color:var(--text);font-size:24px;margin-bottom:8px}
+    .msg{max-width:85%;padding:13px 16px;border:1px solid var(--line);border-radius:17px;white-space:pre-wrap;line-height:1.7;overflow-wrap:anywhere}
+    .user{align-self:flex-start;background:#173c3a;border-color:#28665c}.assistant{align-self:flex-end;background:var(--panel)}
+    form{display:flex;gap:10px;padding:12px;background:var(--panel);border:1px solid var(--line);border-radius:18px}
+    textarea{flex:1;resize:vertical;min-height:48px;max-height:160px;border:0;outline:0;background:transparent;color:var(--text);font:inherit;padding:10px}
+    button{border:0;border-radius:13px;padding:0 20px;background:var(--accent);color:#06251d;font-weight:800;font-size:15px}
+    button:disabled{opacity:.55}footer{text-align:center;color:var(--muted);font-size:11px;padding:12px}
+    @media(max-width:520px){.app{padding:12px}.msg{max-width:94%}button{padding:0 14px}}
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header>
+      <div class="logo">O</div>
+      <div><h1>ORAK AI</h1><p>مساعدك الذكي باللغة العربية</p></div>
+      <span id="status">جاهز</span>
+    </header>
+    <section id="chat" aria-live="polite">
+      <div class="welcome" id="welcome"><strong>أهلاً بيج في ORAK AI</strong>اكتبي سؤالج وراح أحاول أساعدج.</div>
+    </section>
+    <form id="form">
+      <textarea id="prompt" placeholder="اكتبي رسالتج هنا..." aria-label="الرسالة" required></textarea>
+      <button id="send" type="submit">إرسال</button>
+    </form>
+    <footer>ORAK AI · نسخة تجريبية أولية</footer>
+  </main>
+<script>
+  const form = document.querySelector("#form");
+  const input = document.querySelector("#prompt");
+  const chat = document.querySelector("#chat");
+  const send = document.querySelector("#send");
+  const status = document.querySelector("#status");
+  const history = [];
+
+  function addMessage(role, content) {
+    document.querySelector("#welcome")?.remove();
+    const node = document.createElement("div");
+    node.className = "msg " + role;
+    node.textContent = content;
+    chat.appendChild(node);
+    node.scrollIntoView({ behavior: "smooth", block: "end" });
+    return node;
+  }
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const content = input.value.trim();
+    if (!content || send.disabled) return;
+    history.push({ role: "user", content });
+    addMessage("user", content);
+    input.value = "";
+    send.disabled = true;
+    status.textContent = "يفكر...";
+    const pending = addMessage("assistant", "لحظة، أفكر...");
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ messages: history })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "حدث خطأ في الاتصال.");
+      pending.textContent = data.reply;
+      history.push({ role: "assistant", content: data.reply });
+    } catch (error) {
+      pending.textContent = "تعذر إكمال الطلب: " + error.message;
+      history.pop();
+    } finally {
+      send.disabled = false;
+      status.textContent = "جاهز";
+      input.focus();
+    }
+  });
+</script>
+</body>
+</html>
