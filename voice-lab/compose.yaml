@@ -1,0 +1,12 @@
+services:
+  orak-voice-lab:
+    build: .
+    container_name: orak-voice-lab
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      ORAK_UPLOAD_TOKEN: ${ORAK_UPLOAD_TOKEN:?Set ORAK_UPLOAD_TOKEN in .env}
+      ORAK_VOICE_DATA: /data
+    volumes:
+      - ./data:/data
