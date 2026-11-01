@@ -7,20 +7,21 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
-import boto3
-from botocore.config import Config
 from fastapi import FastAPI, File, Form, Header, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
 BASE_DIR = Path(__file__).resolve().parent
 MODEL_DIR = Path(os.getenv("ORAK_VOICE_MODELS", BASE_DIR / "models"))
+DATA_DIR = Path(os.getenv("ORAK_VOICE_DATA", BASE_DIR / "data"))
+AUDIO_DIR = DATA_DIR / "library"
+INDEX_FILE = DATA_DIR / "library.json"
 REGISTRY_FILE = BASE_DIR / "voices.json"
 MAX_AUDIO_BYTES = 50 * 1024 * 1024
-ALLOWED_TYPES = {"audio/wav", "audio/x-wav", "audio/mpeg", "audio/mp3", "audio/mp4", "audio/x-m4a", "audio/aac", "audio/ogg", "audio/flac"}
+ALLOWED_EXTENSIONS = {".wav", ".mp3", ".m4a", ".aac", ".ogg", ".flac"}
 
-app = FastAPI(title="ORAK Voice Lab API", description="Private voice library and Arabic TTS service for ORAK AI.", version="0.2.0")
+app = FastAPI(title="ORAK Voice Lab API", description="Private self-hosted voice library for ORAK AI.", version="0.3.0")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=False, allow_methods=["GET", "POST", "OPTIONS"], allow_headers=["Authorization", "Content-Type"])
 
 
@@ -48,32 +49,39 @@ def find_voice(voice_id: str):
 def require_upload_token(authorization: str | None):
     expected = os.getenv("ORAK_UPLOAD_TOKEN")
     if not expected:
-        raise HTTPException(status_code=503, detail="Upload security is not configured on the server.")
+        raise HTTPException(status_code=503, detail="Server security is not configured.")
     if authorization != f"Bearer {expected}":
         raise HTTPException(status_code=401, detail="Invalid ORAK upload key.")
 
 
-def r2_client():
-    account_id = os.getenv("R2_ACCOUNT_ID")
-    access_key = os.getenv("R2_ACCESS_KEY_ID")
-    secret_key = os.getenv("R2_SECRET_ACCESS_KEY")
-    bucket = os.getenv("R2_BUCKET_NAME")
-    if not all((account_id, access_key, secret_key, bucket)):
-        raise HTTPException(status_code=503, detail="Cloud storage is not configured yet.")
-    client = boto3.client(
-        "s3",
-        endpoint_url=f"https://{account_id}.r2.cloudflarestorage.com",
-        aws_access_key_id=access_key,
-        aws_secret_access_key=secret_key,
-        region_name="auto",
-        config=Config(signature_version="s3v4"),
-    )
-    return client, bucket
+def read_library():
+    AUDIO_DIR.mkdir(parents=True, exist_ok=True)
+    if not INDEX_FILE.exists():
+        return []
+    try:
+        return json.loads(INDEX_FILE.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise HTTPException(status_code=500, detail="Voice library index is damaged.") from exc
+
+
+def write_library(items):
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    temp_index = INDEX_FILE.with_suffix(".tmp")
+    temp_index.write_text(json.dumps(items, ensure_ascii=False, indent=2), encoding="utf-8")
+    temp_index.replace(INDEX_FILE)
+
+
+@app.get("/")
+def home():
+    page = BASE_DIR / "index.html"
+    if not page.is_file():
+        raise HTTPException(status_code=404, detail="Voice Studio page is missing.")
+    return FileResponse(page, media_type="text/html")
 
 
 @app.get("/health")
 def health():
-    return {"service": "ORAK Voice Lab", "status": "ready", "stage": "voice-library"}
+    return {"service": "ORAK Voice Lab", "status": "ready", "stage": "self-hosted-library"}
 
 
 @app.get("/voices")
@@ -87,70 +95,63 @@ def voices():
 
 
 @app.post("/library/upload")
-async def upload_audio(
-    file: UploadFile = File(...),
-    voice_name: str = Form(...),
-    voice_type: str = Form("other"),
-    language: str = Form("ar"),
-    authorization: str | None = Header(default=None),
-):
+async def upload_audio(file: UploadFile = File(...), voice_name: str = Form(...), voice_type: str = Form("other"), language: str = Form("ar"), authorization: str | None = Header(default=None)):
     require_upload_token(authorization)
     if not voice_name.strip() or len(voice_name) > 80:
         raise HTTPException(status_code=400, detail="Enter a voice name up to 80 characters.")
     if voice_type not in {"female", "male", "other"}:
         raise HTTPException(status_code=400, detail="Invalid voice type.")
-    content_type = (file.content_type or "").lower()
-    suffix = Path(file.filename or "audio.wav").suffix.lower()
-    extension_types = {".wav": "audio/wav", ".mp3": "audio/mpeg", ".m4a": "audio/mp4", ".aac": "audio/aac", ".ogg": "audio/ogg", ".flac": "audio/flac"}
-    if content_type == "application/octet-stream" and suffix in extension_types:
-        content_type = extension_types[suffix]
-    if content_type not in ALLOWED_TYPES:
+    suffix = Path(file.filename or "").suffix.lower()
+    if suffix not in ALLOWED_EXTENSIONS:
         raise HTTPException(status_code=415, detail="Use WAV, MP3, M4A, AAC, OGG or FLAC audio.")
-    data = await file.read(MAX_AUDIO_BYTES + 1)
-    if not data or len(data) > MAX_AUDIO_BYTES:
-        raise HTTPException(status_code=413, detail="Audio must be between 1 byte and 50 MB.")
-    if suffix not in {".wav", ".mp3", ".m4a", ".aac", ".ogg", ".flac"}:
-        suffix = ".audio"
-    object_key = f"library/{uuid.uuid4().hex}{suffix}"
-    client, bucket = r2_client()
-    client.put_object(
-        Bucket=bucket,
-        Key=object_key,
-        Body=data,
-        ContentType=content_type,
-        Metadata={
-            "voice-name": voice_name.strip(),
-            "voice-type": voice_type,
-            "language": language[:12],
-            "original-filename": Path(file.filename or "audio").name[:120],
-            "uploaded-at": datetime.now(timezone.utc).isoformat(),
-        },
-    )
-    return {"ok": True, "key": object_key, "name": voice_name.strip(), "size": len(data)}
+    AUDIO_DIR.mkdir(parents=True, exist_ok=True)
+    object_name = f"{uuid.uuid4().hex}{suffix}"
+    destination = AUDIO_DIR / object_name
+    total = 0
+    try:
+        with destination.open("wb") as output:
+            while True:
+                chunk = await file.read(1024 * 1024)
+                if not chunk:
+                    break
+                total += len(chunk)
+                if total > MAX_AUDIO_BYTES:
+                    raise HTTPException(status_code=413, detail="Audio must be 50 MB or smaller.")
+                output.write(chunk)
+        if total == 0:
+            raise HTTPException(status_code=400, detail="The selected audio file is empty.")
+        item = {"key": object_name, "name": voice_name.strip(), "type": voice_type, "language": language[:12], "size": total, "uploaded_at": datetime.now(timezone.utc).isoformat()}
+        items = read_library()
+        items.append(item)
+        write_library(items)
+        return {"ok": True, **item}
+    except Exception:
+        destination.unlink(missing_ok=True)
+        raise
+    finally:
+        await file.close()
 
 
 @app.get("/library")
 def list_library(authorization: str | None = Header(default=None)):
     require_upload_token(authorization)
-    client, bucket = r2_client()
-    response = client.list_objects_v2(Bucket=bucket, Prefix="library/")
-    items = []
-    for obj in response.get("Contents", []):
-        head = client.head_object(Bucket=bucket, Key=obj["Key"])
-        meta = head.get("Metadata", {})
-        items.append({
-            "key": obj["Key"],
-            "name": meta.get("voice-name", "صوت بدون اسم"),
-            "type": meta.get("voice-type", "other"),
-            "language": meta.get("language", "ar"),
-            "size": obj["Size"],
-            "uploaded_at": meta.get("uploaded-at"),
-            "play_url": client.generate_presigned_url(
-                "get_object", Params={"Bucket": bucket, "Key": obj["Key"]}, ExpiresIn=900
-            ),
-        })
-    items.sort(key=lambda item: item.get("uploaded_at") or "", reverse=True)
-    return {"items": items}
+    result = []
+    for item in sorted(read_library(), key=lambda value: value.get("uploaded_at", ""), reverse=True):
+        if (AUDIO_DIR / item["key"]).is_file():
+            result.append({**item, "play_url": f"/library/{item['key']}/play"})
+    return {"items": result}
+
+
+@app.get("/library/{key}/play")
+def play_audio(key: str, authorization: str | None = Header(default=None)):
+    require_upload_token(authorization)
+    if not re.fullmatch(r"[a-f0-9]{32}\.(wav|mp3|m4a|aac|ogg|flac)", key):
+        raise HTTPException(status_code=400, detail="Invalid audio key.")
+    path = AUDIO_DIR / key
+    if not path.is_file():
+        raise HTTPException(status_code=404, detail="Audio file not found.")
+    media = {".wav": "audio/wav", ".mp3": "audio/mpeg", ".m4a": "audio/mp4", ".aac": "audio/aac", ".ogg": "audio/ogg", ".flac": "audio/flac"}[path.suffix]
+    return FileResponse(path, media_type=media, filename=key)
 
 
 @app.post("/synthesize")
@@ -165,10 +166,7 @@ def synthesize(request: SynthesisRequest):
     with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as output:
         output_path = Path(output.name)
     try:
-        completed = subprocess.run(
-            ["piper", "--model", str(model_path), "--config", str(config_path), "--output_file", str(output_path)],
-            input=request.text, text=True, capture_output=True, timeout=120, check=False,
-        )
+        completed = subprocess.run(["piper", "--model", str(model_path), "--config", str(config_path), "--output_file", str(output_path)], input=request.text, text=True, capture_output=True, timeout=120, check=False)
         if completed.returncode != 0 or not output_path.exists():
             raise HTTPException(status_code=500, detail="Voice synthesis failed; check Piper runtime/model.")
         return FileResponse(output_path, media_type="audio/wav", filename=f"{request.voice_id}.wav")
