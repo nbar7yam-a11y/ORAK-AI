@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#100d1c"><title>ORAK Voice Studio</title>
+<style>
+:root{color-scheme:dark;--bg:#100d1c;--panel:#1b1729;--line:#38304d;--muted:#b5abc9;--accent:#b69aff;--text:#f8f5ff;--good:#7ee0b0;--bad:#ff9caa}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 85% 0%,#35234e 0,transparent 42%),var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;min-height:100vh}
+main{width:min(760px,100%);margin:auto;padding:26px 16px 60px}.brand{display:flex;align-items:center;gap:12px;margin-bottom:28px}.logo{width:48px;height:48px;border:1px solid #8067a9;border-radius:15px;display:grid;place-items:center;color:var(--accent);font-weight:900;font-size:20px}.brand small{display:block;color:var(--muted);letter-spacing:2px;font-size:11px}.brand strong{font-size:19px;letter-spacing:1px}
+h1{font-size:clamp(26px,6vw,38px);margin:0 0 8px}.sub{color:var(--muted);line-height:1.8;margin:0 0 22px}.panel{background:#1b1729ed;border:1px solid var(--line);border-radius:20px;padding:20px;margin:16px 0;box-shadow:0 12px 35px #0003}.panel h2{font-size:18px;margin:0 0 16px}.drop{border:1.5px dashed #8067a9;background:#211b31;border-radius:16px;padding:24px 14px;text-align:center}.drop strong{display:block;margin:8px 0}.hint{color:var(--muted);font-size:12px}.choose{display:inline-block;background:#a98be8;color:#1a1027;font-weight:800;padding:11px 18px;border-radius:12px;margin-top:10px;cursor:pointer}input[type=file]{display:none}
+label{display:block;color:#ddd4ed;font-size:13px;margin:15px 0 7px}input[type=text],input[type=url],input[type=password],select{width:100%;background:#110e1b;border:1px solid var(--line);border-radius:11px;color:white;padding:12px;font:inherit;outline:none}input:focus,select:focus{border-color:var(--accent)}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}button{border:0;border-radius:12px;padding:13px 17px;font:inherit;font-weight:800;cursor:pointer}.primary{background:var(--accent);color:#1a1027;width:100%;margin-top:18px}.secondary{background:#302640;color:#eee}.primary:disabled{opacity:.45;cursor:not-allowed}audio{width:100%;margin-top:12px;height:42px}.filemeta{margin-top:12px;color:var(--muted);font-size:12px;line-height:1.7}.status{font-size:13px;line-height:1.7;margin-top:12px;white-space:pre-wrap}.status.good{color:var(--good)}.status.bad{color:var(--bad)}.item{border-top:1px solid var(--line);padding:14px 0}.item:first-child{border:0}.item strong{display:block}.item small{color:var(--muted)}.item audio{margin-top:8px}.empty{color:var(--muted);font-size:13px;padding:12px 0}.note{font-size:12px;color:var(--muted);line-height:1.8}.row{display:flex;align-items:center;justify-content:space-between;gap:10px}.hidden{display:none!important}
+@media(max-width:520px){main{padding:20px 13px 40px}.panel{padding:16px}.grid{grid-template-columns:1fr}.row{align-items:flex-start;flex-direction:column}}
+</style></head>
+<body><main>
+<header class="brand"><div class="logo">O</div><div><strong>ORAK VOICE STUDIO</strong><small>YOUR VOICE LIBRARY</small></div></header>
+<h1>مكتبة أصوات أوراك</h1><p class="sub">ارفعي ملف الصوت من موبايلج مباشرة إلى التخزين السحابي الخاص، وبعدها راح يظهر هنا حتى تسمعينه وتراجعينه.</p>
+<section class="panel">
+<h2>١ — إضافة صوت جديد</h2>
+<div class="drop"><div style="font-size:30px">♫</div><strong id="fileTitle">اختاري ملف صوتي من جهازج</strong><div class="hint">WAV · MP3 · M4A · AAC · OGG · FLAC — الحد 50 MB</div><label class="choose" for="audioFile">اختيار ملف من الهاتف</label><input id="audioFile" type="file" accept=".wav,.mp3,.m4a,.aac,.ogg,.flac,audio/*"></div>
+<div id="previewWrap" class="hidden"><div class="filemeta" id="fileMeta"></div><audio id="preview" controls></audio></div>
+<div class="grid"><div><label for="voiceName">اسم الصوت</label><input id="voiceName" type="text" maxlength="80" placeholder="مثلاً: ORAK Female 01"></div><div><label for="voiceType">تصنيف الصوت</label><select id="voiceType"><option value="female">أنثوي</option><option value="male">رجالي</option><option value="other">آخر</option></select></div></div>
+<label for="language">اللغة</label><select id="language"><option value="ar">العربية</option><option value="ar-IQ">العربية العراقية</option><option value="ar-SA">العربية السعودية</option><option value="en">الإنجليزية</option><option value="other">أخرى</option></select>
+<button id="uploadBtn" class="primary" disabled>رفع الصوت إلى مكتبة أوراك</button><div id="uploadStatus" class="status"></div>
+</section>
+<section class="panel">
+<div class="row"><h2>٢ — مكتبة الأصوات المرفوعة</h2><button id="refreshBtn" class="secondary">تحديث</button></div>
+<div id="library"><div class="empty">أدخلي إعدادات الربط أولاً ثم اضغطي تحديث.</div></div>
+</section>
+<section class="panel">
+<h2>إعداد الربط الآمن</h2><p class="note">تحتاجين رابط API المنشور ومفتاح رفع خاص. المفتاح يُحفظ داخل هذا المتصفح فقط. لا تشاركيه مع أي شخص، ولا تضعي مفاتيح Cloudflare هنا.</p>
+<label for="apiUrl">رابط API المنشور</label><input id="apiUrl" type="url" placeholder="https://your-api.example.com">
+<label for="apiToken">مفتاح ORAK Upload</label><input id="apiToken" type="password" autocomplete="off" placeholder="أدخلي مفتاح الرفع">
+<button id="saveConfig" class="secondary" style="width:100%;margin-top:14px">حفظ إعدادات الربط بهذا الجهاز</button><div id="configStatus" class="status"></div>
+</section>
+<p class="note">ملفات الصوت المرفوعة تبقى في حاوية R2 الخاصة. روابط الاستماع مؤقتة وتتجدد عند تحديث المكتبة. هذه الصفحة لا تدرب نموذج الصوت تلقائياً؛ إنها تجمع الملفات في مكتبة ORAK استعداداً لمرحلة تجهيز البيانات والتدريب.</p>
+</main>
+<script>
+const $=id=>document.getElementById(id);let selectedFile=null,previewUrl=null;
+function config(){return{url:localStorage.getItem("orak_api_url")||"",token:localStorage.getItem("orak_api_token")||""}}
+function api(path){const c=config();return c.url.replace(/\/+$/,"")+path}
+function auth(){return{"Authorization":"Bearer "+config().token}}
+function status(id,msg,kind=""){const el=$(id);el.textContent=msg;el.className="status "+kind}
+function size(n){return n<1024*1024?(n/1024).toFixed(1)+" KB":(n/1024/1024).toFixed(2)+" MB"}
+$("audioFile").addEventListener("change",e=>{selectedFile=e.target.files[0]||null;$("uploadBtn").disabled=!selectedFile;if(previewUrl)URL.revokeObjectURL(previewUrl);if(!selectedFile){$("previewWrap").classList.add("hidden");return}previewUrl=URL.createObjectURL(selectedFile);$("fileTitle").textContent=selectedFile.name;$("fileMeta").textContent="الحجم: "+size(selectedFile.size)+" · النوع: "+(selectedFile.type||"غير محدد");$("preview").src=previewUrl;$("previewWrap").classList.remove("hidden");if(!$("voiceName").value)$("voiceName").value=selectedFile.name.replace(/\.[^.]+$/,"")});
+$("saveConfig").addEventListener("click",()=>{const u=$("apiUrl").value.trim().replace(/\/+$/,""),t=$("apiToken").value.trim();if(!/^https:\/\//i.test(u)||!t){status("configStatus","أدخلي رابط HTTPS ومفتاح الرفع.","bad");return}localStorage.setItem("orak_api_url",u);localStorage.setItem("orak_api_token",t);$("apiToken").value="";status("configStatus","انحفظت الإعدادات بهذا المتصفح.","good");loadLibrary()});
+$("uploadBtn").addEventListener("click",async()=>{const c=config();if(!c.url||!c.token){status("uploadStatus","أكملي إعداد الربط بالأسفل أولاً.","bad");return}if(!selectedFile)return;if(selectedFile.size>50*1024*1024){status("uploadStatus","الملف أكبر من 50 MB.","bad");return}const name=$("voiceName").value.trim();if(!name){status("uploadStatus","اكتبي اسم الصوت أولاً.","bad");return}const form=new FormData();form.append("file",selectedFile);form.append("voice_name",name);form.append("voice_type",$("voiceType").value);form.append("language",$("language").value);$("uploadBtn").disabled=true;status("uploadStatus","جاري رفع الملف إلى سحابة ORAK…");try{const res=await fetch(api("/library/upload"),{method:"POST",headers:auth(),body:form});const data=await res.json();if(!res.ok)throw new Error(data.detail||"فشل الرفع");status("uploadStatus","تم رفع الصوت بنجاح إلى المكتبة السحابية ✓ · "+size(data.size),"good");selectedFile=null;$("audioFile").value="";$("uploadBtn").disabled=true;await loadLibrary()}catch(err){status("uploadStatus","لم يكتمل الرفع: "+err.message,"bad")}finally{$("uploadBtn").disabled=!selectedFile}});
+async function loadLibrary(){const c=config();if(!c.url||!c.token){$("library").innerHTML='<div class="empty">أدخلي إعدادات الربط حتى نعرض الأصوات.</div>';return} $("library").innerHTML='<div class="empty">جاري جلب المكتبة…</div>';try{const res=await fetch(api("/library"),{headers:auth()});const data=await res.json();if(!res.ok)throw new Error(data.detail||"تعذر تحميل المكتبة");if(!data.items.length){$("library").innerHTML='<div class="empty">المكتبة فارغة حالياً. ارفعي أول صوت لأوراك.</div>';return}$("library").innerHTML="";for(const item of data.items){const box=document.createElement("div");box.className="item";const title=document.createElement("strong");title.textContent=item.name;const meta=document.createElement("small");meta.textContent=(item.type==="female"?"أنثوي":item.type==="male"?"رجالي":"آخر")+" · "+size(item.size);const audio=document.createElement("audio");audio.controls=true;audio.preload="none";audio.src=item.play_url;box.append(title,meta,audio);$("library").append(box)}}catch(err){$("library").innerHTML='<div class="empty"></div>';$("library").firstChild.textContent="تعذر الاتصال: "+err.message}}
+$("refreshBtn").addEventListener("click",loadLibrary);const c=config();$("apiUrl").value=c.url;
+</script></body></html>
