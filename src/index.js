@@ -1,24 +1,55 @@
+const MODEL = "@cf/meta/llama-3.1-8b-instruct";
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
-    if (url.pathname === "/api/health") return Response.json({ ok: true, app: env.APP_NAME || "ORAK AI" });
+
+    if (url.pathname === "/api/health") {
+      return Response.json({
+        ok: true,
+        app: "ORAK AI",
+        engine: "Cloudflare Workers AI",
+        model: MODEL
+      });
+    }
+
     if (url.pathname === "/api/chat" && request.method === "POST") {
       try {
         const body = await request.json();
-        const messages = Array.isArray(body.messages) ? body.messages : [];
-        if (!messages.length) return Response.json({ error: "أرسلي رسالة أولاً" }, { status: 400 });
-        if (!env.AI_API_KEY) return Response.json({ error: "لم يتم إعداد مفتاح الذكاء الاصطناعي بعد. أضيفي AI_API_KEY في Cloudflare Secrets." }, { status: 503 });
-        const base = (env.AI_BASE_URL || "https://api.openai.com/v1").replace(/\/$/, "");
-        const upstream = await fetch(base + "/chat/completions", {
-          method: "POST",
-          headers: { "Authorization": "Bearer " + env.AI_API_KEY, "Content-Type": "application/json" },
-          body: JSON.stringify({ model: env.AI_MODEL || "gpt-4o-mini", messages: [{ role: "system", content: "أنت ORAK AI، مساعد ذكي يتحدث العربية بوضوح وبأسلوب ودود. لا تدّع امتلاك قدرات غير مفعّلة." }, ...messages.slice(-20)], temperature: 0.7 })
+        const incoming = Array.isArray(body.messages) ? body.messages : [];
+        if (!incoming.length) {
+          return Response.json({ error: "أرسلي رسالة أولاً." }, { status: 400 });
+        }
+        const messages = incoming
+          .filter(m => m && ["user", "assistant"].includes(m.role) && typeof m.content === "string")
+          .slice(-16);
+        if (!messages.length) {
+          return Response.json({ error: "صيغة الرسائل غير صحيحة." }, { status: 400 });
+        }
+
+        const result = await env.AI.run(MODEL, {
+          messages: [
+            { role: "system", content: "أنت ORAK AI، مساعد ذكي يتحدث العربية بوضوح وبأسلوب ودود. أجب بدقة، وصرّح عندما لا تعرف. لا تدّع امتلاك قدرات غير مفعّلة." },
+            ...messages
+          ],
+          max_tokens: 900
         });
-        const data = await upstream.json();
-        if (!upstream.ok) return Response.json({ error: data.error?.message || "تعذر الاتصال بمزود النموذج" }, { status: upstream.status });
-        return Response.json({ reply: data.choices?.[0]?.message?.content || "لم يصل رد من النموذج." });
-      } catch { return Response.json({ error: "حدث خطأ في معالجة الطلب." }, { status: 500 }); }
+
+        const reply = typeof result?.response === "string"
+          ? result.response
+          : result?.choices?.[0]?.message?.content;
+        if (!reply) {
+          return Response.json({ error: "وصل رد غير متوقع من محرك الذكاء الاصطناعي." }, { status: 502 });
+        }
+        return Response.json({ reply, model: MODEL });
+      } catch (error) {
+        return Response.json({
+          error: "تعذر تشغيل نموذج الذكاء الاصطناعي. تأكدي من تفعيل Workers AI في حساب Cloudflare.",
+          detail: String(error?.message || error)
+        }, { status: 502 });
+      }
     }
+
     return env.ASSETS.fetch(request);
   }
 };

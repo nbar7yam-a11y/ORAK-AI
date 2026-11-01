@@ -1,4 +1,4 @@
-name = "orak-ai"
+name = "withered-wind-d7c9"
 main = "src/index.js"
 compatibility_date = "2026-11-01"
 
@@ -6,5 +6,5 @@ compatibility_date = "2026-11-01"
 directory = "./public"
 binding = "ASSETS"
 
-[vars]
-APP_NAME = "ORAK AI"
+[ai]
+binding = "AI"
