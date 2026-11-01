@@ -1,92 +1,10 @@
 <!doctype html>
-<html lang="ar" dir="rtl">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#101827">
-  <title>ORAK AI</title>
-  <style>
-    :root{color-scheme:dark;--bg:#0b1220;--panel:#111c2e;--line:#26364d;--text:#edf3fb;--muted:#9aabc0;--accent:#57c5a5}
-    *{box-sizing:border-box}body{margin:0;background:linear-gradient(145deg,#0b1220,#101d30);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;min-height:100vh}
-    .app{max-width:900px;margin:auto;min-height:100vh;display:flex;flex-direction:column;padding:18px}
-    header{display:flex;align-items:center;gap:12px;padding:12px 4px 18px;border-bottom:1px solid var(--line)}
-    .logo{width:44px;height:44px;border-radius:14px;background:var(--accent);color:#06251d;display:grid;place-items:center;font-weight:900;font-size:20px}
-    h1{font-size:20px;margin:0}header p{margin:3px 0 0;color:var(--muted);font-size:13px}
-    #status{margin-right:auto;color:var(--muted);font-size:12px}
-    #chat{flex:1;display:flex;flex-direction:column;gap:14px;padding:24px 0;min-height:50vh}
-    .welcome{margin:auto;text-align:center;color:var(--muted);line-height:1.8}.welcome strong{display:block;color:var(--text);font-size:24px;margin-bottom:8px}
-    .msg{max-width:85%;padding:13px 16px;border:1px solid var(--line);border-radius:17px;white-space:pre-wrap;line-height:1.7;overflow-wrap:anywhere}
-    .user{align-self:flex-start;background:#173c3a;border-color:#28665c}.assistant{align-self:flex-end;background:var(--panel)}
-    form{display:flex;gap:10px;padding:12px;background:var(--panel);border:1px solid var(--line);border-radius:18px}
-    textarea{flex:1;resize:vertical;min-height:48px;max-height:160px;border:0;outline:0;background:transparent;color:var(--text);font:inherit;padding:10px}
-    button{border:0;border-radius:13px;padding:0 20px;background:var(--accent);color:#06251d;font-weight:800;font-size:15px}
-    button:disabled{opacity:.55}footer{text-align:center;color:var(--muted);font-size:11px;padding:12px}
-    @media(max-width:520px){.app{padding:12px}.msg{max-width:94%}button{padding:0 14px}}
-  </style>
-</head>
-<body>
-  <main class="app">
-    <header>
-      <div class="logo">O</div>
-      <div><h1>ORAK AI</h1><p>مساعدك الذكي باللغة العربية</p></div>
-      <span id="status">جاهز</span>
-    </header>
-    <section id="chat" aria-live="polite">
-      <div class="welcome" id="welcome"><strong>أهلاً بيج في ORAK AI</strong>اكتبي سؤالج وراح أحاول أساعدج.</div>
-    </section>
-    <form id="form">
-      <textarea id="prompt" placeholder="اكتبي رسالتج هنا..." aria-label="الرسالة" required></textarea>
-      <button id="send" type="submit">إرسال</button>
-    </form>
-    <footer>ORAK AI · نسخة تجريبية أولية</footer>
-  </main>
+<html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>ORAK AI</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#0b1220;color:#eef3ff;font-family:system-ui,Arial;min-height:100vh;display:flex;flex-direction:column}.top{padding:18px 5%;border-bottom:1px solid #263248;display:flex;align-items:center;gap:12px}.logo{width:42px;height:42px;border-radius:14px;background:linear-gradient(135deg,#16a085,#2563eb);display:grid;place-items:center;font-weight:800}.top small{display:block;color:#9eacc4}.wrap{width:min(850px,94%);margin:26px auto;display:flex;flex-direction:column;flex:1}.welcome{text-align:center;margin:35px 0 20px}.welcome h1{font-size:clamp(28px,6vw,42px);margin:8px}.welcome p{color:#9eacc4}.chat{display:flex;flex-direction:column;gap:14px;flex:1;padding:12px 0}.msg{padding:14px 17px;border:1px solid #29364c;border-radius:16px;max-width:90%;white-space:pre-wrap;line-height:1.7}.user{align-self:flex-start;background:#17365a}.bot{align-self:flex-end;background:#151f30}.composer{position:sticky;bottom:0;background:#0b1220;padding:12px 0 20px}.form{display:flex;gap:8px;background:#121d2e;border:1px solid #34445d;border-radius:18px;padding:8px}.form textarea{flex:1;resize:none;border:0;outline:0;background:transparent;color:white;font:inherit;padding:10px;min-height:48px}.form button{border:0;border-radius:13px;background:#168b78;color:white;padding:0 20px;font:inherit;font-weight:700}.hint{text-align:center;color:#7f8da5;font-size:12px;margin-top:8px}button:disabled{opacity:.5}
+</style></head><body><header class="top"><div class="logo">O</div><div><strong>ORAK AI</strong><small>مساعدج الذكي — النسخة الأولية</small></div></header><main class="wrap"><section class="welcome" id="welcome"><h1>أهلاً بيج في ORAK AI</h1><p>اكتبي سؤالج وابدئي المحادثة</p></section><section class="chat" id="chat" aria-live="polite"></section><section class="composer"><form class="form" id="form"><textarea id="input" placeholder="اكتبي رسالتج هنا..." rows="1" required></textarea><button id="send">إرسال</button></form><div class="hint">تحتاج المنصة إلى إعداد مفتاح مزود الذكاء الاصطناعي لتوليد الردود.</div></section></main>
 <script>
-  const form = document.querySelector("#form");
-  const input = document.querySelector("#prompt");
-  const chat = document.querySelector("#chat");
-  const send = document.querySelector("#send");
-  const status = document.querySelector("#status");
-  const history = [];
-
-  function addMessage(role, content) {
-    document.querySelector("#welcome")?.remove();
-    const node = document.createElement("div");
-    node.className = "msg " + role;
-    node.textContent = content;
-    chat.appendChild(node);
-    node.scrollIntoView({ behavior: "smooth", block: "end" });
-    return node;
-  }
-
-  form.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    const content = input.value.trim();
-    if (!content || send.disabled) return;
-    history.push({ role: "user", content });
-    addMessage("user", content);
-    input.value = "";
-    send.disabled = true;
-    status.textContent = "يفكر...";
-    const pending = addMessage("assistant", "لحظة، أفكر...");
-    try {
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ messages: history })
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "حدث خطأ في الاتصال.");
-      pending.textContent = data.reply;
-      history.push({ role: "assistant", content: data.reply });
-    } catch (error) {
-      pending.textContent = "تعذر إكمال الطلب: " + error.message;
-      history.pop();
-    } finally {
-      send.disabled = false;
-      status.textContent = "جاهز";
-      input.focus();
-    }
-  });
-</script>
-</body>
-</html>
+const form=document.querySelector('#form'),input=document.querySelector('#input'),chat=document.querySelector('#chat'),send=document.querySelector('#send');let messages=[];
+function bubble(text,who){const el=document.createElement('div');el.className='msg '+who;el.textContent=text;chat.appendChild(el);el.scrollIntoView({behavior:'smooth',block:'end'});return el}
+form.addEventListener('submit',async e=>{e.preventDefault();const text=input.value.trim();if(!text)return;document.querySelector('#welcome').hidden=true;messages.push({role:'user',content:text});bubble(text,'user');input.value='';send.disabled=true;const wait=bubble('جاري التفكير...','bot');try{const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages})});const d=await r.json();wait.textContent=d.reply||d.error||'حدث خطأ';if(d.reply)messages.push({role:'assistant',content:d.reply});}catch{wait.textContent='تعذر الاتصال بالخادم. تأكدي من النشر والاتصال.'}finally{send.disabled=false;input.focus()}});
+</script></body></html>

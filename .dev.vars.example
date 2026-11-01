@@ -1,3 +1,4 @@
-# Optional local development settings.
-# The AI binding is configured in wrangler.toml.
-# Change MODEL_ID in src/index.js or set it as a Worker variable.
+# انسخي هذا الملف إلى .dev.vars محلياً وضعي مفتاح مزود النموذج
+AI_API_KEY=ضع_مفتاحك_هنا
+AI_BASE_URL=https://api.openai.com/v1
+AI_MODEL=gpt-4o-mini

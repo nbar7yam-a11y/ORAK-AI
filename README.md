@@ -1,2 +1,16 @@
 # ORAK-AI
-An open-source, modular AI platform supporting Arabic chat, multiple AI models, voice, vision, memory, and intelligent agents.
+
+منصة ويب عربية أولية لمساعد ذكاء اصطناعي. تتضمن واجهة محادثة عربية وواجهة API على Cloudflare Workers تتصل بمزود متوافق مع OpenAI Chat Completions.
+
+## التشغيل
+
+1. ثبّتي Node.js ثم شغّلي `npm install`.
+2. انسخي `.dev.vars.example` إلى `.dev.vars` وضعي مفتاح API صالحاً.
+3. شغّلي `npm run dev`.
+4. للنشر: اربطي المستودع بـ Cloudflare Workers، واضبطي `AI_API_KEY` كـ Secret، ويمكن ضبط `AI_BASE_URL` و`AI_MODEL` كمتغيرات.
+
+## ملاحظات
+
+- لا تضعي مفاتيح API داخل ملفات الواجهة أو GitHub.
+- المشروع لا يتضمن أوزان نماذج لغوية؛ هو يربط مزوداً خارجياً متوافقاً مع الواجهة المحددة.
+- الصوت والرؤية والذاكرة الدائمة والوكلاء غير مفعّلة في هذه النسخة.
