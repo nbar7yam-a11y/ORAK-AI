@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: orak-voice-lab
+    runtime: docker
+    plan: 0.5c-512mb
+    region: frankfurt
+    dockerfilePath: ./voice-lab/Dockerfile
+    dockerContext: ./voice-lab
+    healthCheckPath: /health
+    autoDeployTrigger: commit
+    envVars:
+      - key: ORAK_UPLOAD_TOKEN
+        generateValue: true
+      - key: ORAK_VOICE_DATA
+        value: /data
+    disk:
+      name: orak-voice-library
+      mountPath: /data
+      sizeGB: 1
