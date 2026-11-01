@@ -10,6 +10,7 @@ from pathlib import Path
 import boto3
 from botocore.config import Config
 from fastapi import FastAPI, File, Form, Header, HTTPException, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, RedirectResponse
 from pydantic import BaseModel, Field
 
@@ -20,6 +21,7 @@ MAX_AUDIO_BYTES = 50 * 1024 * 1024
 ALLOWED_TYPES = {"audio/wav", "audio/x-wav", "audio/mpeg", "audio/mp3", "audio/mp4", "audio/x-m4a", "audio/aac", "audio/ogg", "audio/flac"}
 
 app = FastAPI(title="ORAK Voice Lab API", description="Private voice library and Arabic TTS service for ORAK AI.", version="0.2.0")
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=False, allow_methods=["GET", "POST", "OPTIONS"], allow_headers=["Authorization", "Content-Type"])
 
 
 class SynthesisRequest(BaseModel):
@@ -98,12 +100,15 @@ async def upload_audio(
     if voice_type not in {"female", "male", "other"}:
         raise HTTPException(status_code=400, detail="Invalid voice type.")
     content_type = (file.content_type or "").lower()
+    suffix = Path(file.filename or "audio.wav").suffix.lower()
+    extension_types = {".wav": "audio/wav", ".mp3": "audio/mpeg", ".m4a": "audio/mp4", ".aac": "audio/aac", ".ogg": "audio/ogg", ".flac": "audio/flac"}
+    if content_type == "application/octet-stream" and suffix in extension_types:
+        content_type = extension_types[suffix]
     if content_type not in ALLOWED_TYPES:
         raise HTTPException(status_code=415, detail="Use WAV, MP3, M4A, AAC, OGG or FLAC audio.")
     data = await file.read(MAX_AUDIO_BYTES + 1)
     if not data or len(data) > MAX_AUDIO_BYTES:
         raise HTTPException(status_code=413, detail="Audio must be between 1 byte and 50 MB.")
-    suffix = Path(file.filename or "audio.wav").suffix.lower()
     if suffix not in {".wav", ".mp3", ".m4a", ".aac", ".ogg", ".flac"}:
         suffix = ".audio"
     object_key = f"library/{uuid.uuid4().hex}{suffix}"
