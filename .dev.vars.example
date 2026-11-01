@@ -1,0 +1,3 @@
+# Optional local development settings.
+# The AI binding is configured in wrangler.toml.
+# Change MODEL_ID in src/index.js or set it as a Worker variable.
